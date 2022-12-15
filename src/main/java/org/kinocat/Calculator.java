@@ -10,8 +10,14 @@ public class Calculator {
     }
 
     private double calc(double r, StringBuilder strNum, StringBuilder ops) {
+        if (ops.length() == 2) {
+            strNum.insert(0, ops.charAt(1));
+        }
+        char c = ops.charAt(0);
         double number = Double.parseDouble(strNum.toString());
-        switch (ops.charAt(0)) {
+        strNum.setLength(0);
+        ops.setLength(0);
+        switch (c) {
             case '+':
                 return r + number;
             case '-':
@@ -23,6 +29,10 @@ public class Calculator {
             default:
                 return number;
         }
+    }
+
+    char lc(StringBuilder sb) {
+        return sb.charAt(sb.length() - 1);
     }
 
     private Double checkBraces(int i) {
@@ -37,6 +47,7 @@ public class Calculator {
                 case ')':
                     brCount--;
                     if (brCount < 0) return null;
+                    if (strNum.length() == 0) return null;
                     result += calc(result, strNum, ops);
                     break;
                 case '(':
@@ -51,22 +62,32 @@ public class Calculator {
                     strNum.append(c);
                     break;
                 case '+':
+                    if (ops.length() != 0 && lc(ops) == '-') {
+                        continue;
+                    }
+                    if (strNum.length() > 0) ops.append('+');
+                    break;
                 case '-':
                     if (i > 0) {
                         if (exp[i - 1] == '-') return null;
-                        if (ops.charAt(ops.length() - 1) == '-') {
+                        char lc = lc(ops);
+                        if (lc == '+') {
                             ops.deleteCharAt(ops.length() - 1);
+                        } else if (lc == '-') {
+                            ops.setCharAt(ops.length() - 1, '+');
                             continue;
                         }
                     }
+                    ops.append(c);
+                    break;
                 case '*':
                 case '/':
-                    result += calc(result, strNum, ops);
+                    if (strNum.length() == 0 || ops.length() > 0) return null;
                     ops.append(c);
-
                     break;
                 default:
                     if (Character.isDigit(c)) {
+                        if (ops.length() > 0) result += calc(result, strNum, ops);
                         strNum.append(c);
                     } else {
                         return null;
