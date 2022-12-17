@@ -20,9 +20,8 @@ public class Main {
 
     public static void main(String[] args) {
 //        new Main().go();
-        double calculate = new Calculator("2 + 3 * 4").calculate();
+        Double calculate = new Calculator("(2)+2*2+((5))").calculate();
         System.out.println(calculate);
-        int b = (2 + 2) * (2);
     }
 
     private String prln(String text) {
