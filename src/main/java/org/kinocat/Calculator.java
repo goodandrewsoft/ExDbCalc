@@ -5,34 +5,40 @@ import java.util.List;
 
 public class Calculator {
 
-    private static final int ADD = 0x0001;
-    private static final int SUB = 0x0002;
-    private static final int MULTI = 0x0004;
-    private static final int DIV = 0x0008;
+    private static final int SIGN = 0;
+    private static final int DM = 1; // division or multiplication
 
     private final char[] expression;
-
     int index = 0;
 
+    public static String fmtDouble(double d) {
+        if (d == (long) d)
+            return String.format("%d", (long) d);
+        else
+            return String.format("%s", d);
+    }
 
     public Calculator(String expression) {
         this.expression = expression.toCharArray();
     }
 
-    private boolean addOrDm(List<Double> numbers, StringBuilder strNum, char sign, char dm) {
+    private static void checkOps(char[] ops) {
+        if (ops[SIGN] == '?' && ops[DM] == '?') throw new RuntimeException("Operators absent");
+    }
+
+    private void addOrDm(List<Double> numbers, StringBuilder strNum, char[] ops) {
         if (strNum.length() > 0) {
             double number = Double.parseDouble(strNum.toString());
             strNum.setLength(0);
-            addOrDm(numbers, number, sign, dm);
-            return true;
-        } else return false;
+            addOrDm(numbers, number, ops);
+        }
     }
 
-    private void addOrDm(List<Double> numbers, double number, char sign, char dm) {
-        if (sign == '-') number = -number;
-        if (dm != '?') {
+    private void addOrDm(List<Double> numbers, double number, char[] ops) {
+        if (ops[SIGN] == '-') number = -number;
+        if (ops[DM] != '?') {
             double prevNumber = numbers.get(numbers.size() - 1);
-            if (dm == '*') {
+            if (ops[DM] == '*') {
                 prevNumber *= number;
             } else {
                 prevNumber /= number;
@@ -41,65 +47,50 @@ public class Calculator {
         } else {
             numbers.add(number);
         }
+        ops[SIGN] = '?';
+        ops[DM] = '?';
     }
 
     private Double calc(int brCount) {
         final char[] exp = expression;
-        int length = exp.length;
         StringBuilder strNum = new StringBuilder();
         List<Double> numbers = new ArrayList<>();
-        char sign = '+';
-        char dm = '?'; // division or multiplication
+        char[] ops = {'+', '?'};
         for (; ; index++) {
-            if (index >= length) {
-                if (addOrDm(numbers, strNum, sign, dm)) {
-                    sign = '?';
-                    dm = '?';
-                }
+            if (index >= exp.length) {
+                addOrDm(numbers, strNum, ops);
                 break;
             }
             char c = exp[index];
             if (Character.isDigit(c) || c == '.') {
-                if (sign == '?' && dm == '?') throw new RuntimeException("Operators absent2");
-                /*if (sign == '-') {
-                    strNum.append(sign);
-                }
-                sign = '+';*/
+                checkOps(ops);
                 strNum.append(c);
             } else {
-                if (addOrDm(numbers, strNum, sign, dm)) {
-                    sign = '?';
-                    dm = '?';
-                }
+                addOrDm(numbers, strNum, ops);
                 if (c == ')') {
                     brCount--;
                     if (brCount < 0) throw new RuntimeException("Incorrect braces");
                     break;
                 } else if (c == '(') {
-                    if (sign == '?' && dm == '?') throw new RuntimeException("Operators absent");
-                    //brCount++;
+                    checkOps(ops);
                     index++;
                     double number = calc(1);
-                    addOrDm(numbers, number, sign, dm);
-                    dm = '?';
-                    sign = '?';
-                } else if (c == ' ') {
-
+                    addOrDm(numbers, number, ops);
                 } else if (c == '+') {
                     if (index > 0 && exp[index - 1] == '+') throw new RuntimeException("Incorrect addition");
-                    if (sign != '-') sign = '+';
+                    if (ops[SIGN] != '-') ops[SIGN] = '+';
                 } else if (c == '-') {
                     if (index > 0 && exp[index - 1] == '-') throw new RuntimeException("Incorrect subtraction");
-                    sign = sign == '+' ? '-' : sign == '-' ? '+' : '-';
+                    ops[SIGN] = ops[SIGN] == '+' ? '-' : ops[SIGN] == '-' ? '+' : '-';
                 } else if (c == '*' || c == '/') {
-                    if (numbers.isEmpty() || sign != '?' || dm != '?') throw new RuntimeException("Incorrect division or multiplication");
-                    dm = c;
+                    if (numbers.isEmpty() || ops[SIGN] != '?' || ops[DM] != '?') throw new RuntimeException("Incorrect division or multiplication");
+                    ops[DM] = c;
                 } else {
-                    throw new RuntimeException("Incorrect character");
+                    if (c != ' ') throw new RuntimeException("Incorrect character");
                 }
             }
         }
-        if (sign != '?' || dm != '?') throw new RuntimeException("Redundant operators");
+        if (ops[SIGN] != '?' || ops[DM] != '?') throw new RuntimeException("Redundant operators or empty expression");
         if (brCount != 0) throw new RuntimeException("Incorrect braces");
 
         return numbers.stream()
@@ -108,9 +99,6 @@ public class Calculator {
     }
 
     public Double calculate() {
-        Double b = calc(0);
-
-
-        return b;
+        return calc(0);
     }
 }

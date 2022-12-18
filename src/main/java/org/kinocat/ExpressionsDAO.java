@@ -23,9 +23,13 @@ public class ExpressionsDAO {
         Statement statement = mConnection.createStatement();
         statement.execute("CREATE DATABASE IF NOT EXISTS " + DB);
         statement.execute("USE " + DB);
+
         String sqlCreate = "CREATE TABLE IF NOT EXISTS " + TABLE
-                + "  (expression TEXT,"
-                + "   result DOUBLE)";
+                + " (id int NOT NULL AUTO_INCREMENT,"
+                + " expression TEXT NOT NULL,"
+                + " result DOUBLE NOT NULL,"
+                + " PRIMARY KEY (id))";
+
         statement.execute(sqlCreate);
     }
 
@@ -53,13 +57,16 @@ public class ExpressionsDAO {
         ResultSet set = statement.executeQuery();
         List<String> list = new ArrayList<>();
         while (set.next()) {
-            list.add(set.getString("expression") + " = " + set.getDouble("result"));
+            list.add(set.getInt("id") + ". " +
+                    set.getString("expression") +
+                    " = " +
+                    Calculator.fmtDouble(set.getDouble("result")));
         }
         return list;
     }
 
     public void addExpressionAndResult(String expression, double result) throws SQLException {
-        PreparedStatement statement = mConnection.prepareStatement("INSERT INTO " + TABLE + " VALUES (?, ?)");
+        PreparedStatement statement = mConnection.prepareStatement("INSERT INTO " + TABLE + " VALUES (NULL, ?, ?)");
         statement.setString(1, expression);
         statement.setDouble(2, result);
         statement.executeUpdate();

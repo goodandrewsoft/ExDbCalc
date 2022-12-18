@@ -12,21 +12,31 @@ public class Main {
     Scanner mScanner = new Scanner(System.in);
     private int mState = MENU;
 
-    public double calculate(String expression) {
-        expression = expression.replaceAll("\\s+","");
-        System.out.println(expression);
-        return 0;
-    }
+
 
     public static void main(String[] args) {
-//        new Main().go();
-        Double calculate = new Calculator("(2)+2*2+((5))").calculate();
-        System.out.println(calculate);
+        new Main().go();
+        //Double calculate = new Calculator("(2)+2*2+((5))").calculate();
+        //Double calculate = new Calculator("7*").calculate();
+        //System.out.println(calculate);
     }
 
     private String prln(String text) {
         System.out.print(text);
         return mScanner.nextLine();
+    }
+
+    private boolean addExpression(ExpressionsDAO db, String expression) {
+        try {
+            double result = new Calculator(expression).calculate();
+            System.out.println(expression + " = " + Calculator.fmtDouble(result));
+            db.addExpressionAndResult(expression, result);
+            return true;
+        } catch (Exception e) {
+            System.out.println("\tERROR: "+ e.getMessage());
+
+            return false;
+        }
     }
 
     public void go() {
@@ -86,9 +96,8 @@ public class Main {
                     case ADD:
                         String expression = prln(("Write expression or back for return to main menu: "));
                         if (!"back".equals(expression)) {
-                            double result = System.currentTimeMillis();
-                            db.addExpressionAndResult(expression, result);
-                            System.out.println("The expression was added to the database successfully.");
+                            if (addExpression(db, expression))
+                                System.out.println("The expression was added to the database successfully.");
                         } else mState = MENU;
                         break;
                     default:
