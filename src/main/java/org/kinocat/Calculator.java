@@ -11,6 +11,10 @@ public class Calculator {
     private final char[] expression;
     int index = 0;
 
+    private Calculator(String expression) {
+        this.expression = expression.toCharArray();
+    }
+
     public static String fmtDouble(double d) {
         if (d == (long) d)
             return String.format("%d", (long) d);
@@ -18,12 +22,33 @@ public class Calculator {
             return String.format("%s", d);
     }
 
-    public Calculator(String expression) {
-        this.expression = expression.toCharArray();
-    }
-
     private static void checkOps(char[] ops) {
         if (ops[SIGN] == '?' && ops[DM] == '?') throw new RuntimeException("Operators absent");
+    }
+
+    public static Double calculate(String expression) {
+        return new Calculator(expression).calc(0);
+    }
+
+    public static int calcDigits(String expression) {
+        int cnt = 0;
+        boolean found = false;
+        int dots = 0;
+        for (int i = 0; i < expression.length(); i++) {
+            char c = expression.charAt(i);
+            if (Character.isDigit(c) || c == '.') {
+                if (!found) {
+                    cnt++;
+                    found = true;
+                }
+                if (c == '.') {
+                    dots++;
+                }
+            } else {
+                found = false;
+            }
+        }
+        return cnt;
     }
 
     private void addOrDm(List<Double> numbers, StringBuilder strNum, char[] ops) {
@@ -69,7 +94,7 @@ public class Calculator {
                 addOrDm(numbers, strNum, ops);
                 if (c == ')') {
                     brCount--;
-                    if (brCount < 0) throw new RuntimeException("Incorrect braces");
+                    if (brCount < 0) throw new RuntimeException("Incorrect brackets");
                     break;
                 } else if (c == '(') {
                     checkOps(ops);
@@ -91,14 +116,10 @@ public class Calculator {
             }
         }
         if (ops[SIGN] != '?' || ops[DM] != '?') throw new RuntimeException("Redundant operators or empty expression");
-        if (brCount != 0) throw new RuntimeException("Incorrect braces");
+        if (brCount != 0) throw new RuntimeException("Incorrect brackets");
 
         return numbers.stream()
                 .mapToDouble(Double::doubleValue)
                 .sum();
-    }
-
-    public Double calculate() {
-        return calc(0);
     }
 }

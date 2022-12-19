@@ -5,17 +5,21 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class ExpressionsDAO {
-    private static final String URL = "jdbc:mysql://localhost:3306";
-    private static final String USERNAME = "root";
-    private static final String PASSWORD = "";
+    static final String URL = "jdbc:mysql://localhost:3306";
+    static final String USERNAME = "root";
+    static final String PASSWORD = "";
     private static final String DB = "db_exp";
     private static final String TABLE = "expressions";
 
     private final Connection mConnection;
 
     public ExpressionsDAO() throws Exception {
+        this(URL, USERNAME, PASSWORD);
+    }
+
+    public ExpressionsDAO(String url, String user, String password) throws Exception {
         Class.forName("com.mysql.cj.jdbc.Driver").newInstance();
-        mConnection = DriverManager.getConnection(URL, USERNAME, PASSWORD);
+        mConnection = DriverManager.getConnection(url, user, password);
         createDbIfNeeded();
     }
 
@@ -37,7 +41,7 @@ public class ExpressionsDAO {
         mConnection.close();
     }
 
-    public List<String> index(char c, double result) throws SQLException {
+    public List<String> index(String key, char c, double value) throws SQLException {
         PreparedStatement statement;
         String sql = "SELECT * FROM " + TABLE;
         switch (c) {
@@ -47,9 +51,9 @@ public class ExpressionsDAO {
             case '>':
             case '=':
             case '<':
-                sql += " WHERE result" + c + '?';
+                sql += " WHERE " + key + c + '?';
                 statement = mConnection.prepareStatement(sql);
-                statement.setDouble(1, result);
+                statement.setDouble(1, value);
                 break;
             default:
                 throw new IllegalArgumentException();
@@ -70,5 +74,24 @@ public class ExpressionsDAO {
         statement.setString(1, expression);
         statement.setDouble(2, result);
         statement.executeUpdate();
+    }
+
+    public void update(int id, String expression, double result) throws SQLException {
+        PreparedStatement statement = mConnection.prepareStatement("UPDATE " + TABLE + " SET expression=?, result=? WHERE id=?");
+        statement.setString(1, expression);
+        statement.setDouble(2, result);
+        statement.setInt(3, id);
+        statement.executeUpdate();
+    }
+
+    public void delete(int id) throws SQLException {
+        PreparedStatement preparedStatement = mConnection.prepareStatement("DELETE FROM " + TABLE + " WHERE id=?");
+        preparedStatement.setInt(1, id);
+        preparedStatement.executeUpdate();
+    }
+
+    public void truncate() throws SQLException {
+        Statement statement = mConnection.createStatement();
+        statement.executeUpdate("TRUNCATE " + TABLE);
     }
 }
