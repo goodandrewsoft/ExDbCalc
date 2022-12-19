@@ -26,26 +26,32 @@ public class Calculator {
         if (ops[SIGN] == '?' && ops[DM] == '?') throw new RuntimeException("Operators absent");
     }
 
-    public static Double calculate(String expression) {
+    public static double calculate(String expression) {
         return new Calculator(expression).calc(0);
     }
 
-    public static int calcDigits(String expression) {
+    public static int calcNumbers(String expression) {
         int cnt = 0;
         boolean found = false;
         int dots = 0;
         for (int i = 0; i < expression.length(); i++) {
             char c = expression.charAt(i);
             if (Character.isDigit(c) || c == '.') {
-                if (!found) {
-                    cnt++;
-                    found = true;
-                }
                 if (c == '.') {
                     dots++;
+                    if (dots > 1) {
+                        found = false;
+                        dots = 0;
+                    }
+                } else {
+                    if (!found) {
+                        cnt++;
+                        found = true;
+                    }
                 }
             } else {
                 found = false;
+                dots = 0;
             }
         }
         return cnt;

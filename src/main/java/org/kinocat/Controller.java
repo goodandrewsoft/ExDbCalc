@@ -15,7 +15,7 @@ public class Controller {
      * PASSWORD = "";
      * If 'false' - parameters from user inputs will be used.
      */
-    private static final boolean DEFAULT_CONNECTION_PARAMS = false;
+    private static final boolean DEFAULT_CONNECTION_PARAMS = true;
 
     private static final int MENU_MODE = 0;
     private static final int ADD_MODE = 1;
@@ -36,11 +36,11 @@ public class Controller {
             EDIT + "\tEdit expressions.\n" +
             DEL + "\tDelete expression from database\n" +
             EXIT + "\tExit calculator.\n\n" +
-            "For command help, type 'help command'";
+            "For command help, type 'help <item>'";
 
     Map<String, String> mHelpMap = new HashMap<>() {
         {
-            put(HELP, "To make a more specific request, please type 'help <item>'");
+            put(HELP, "To make a more specific command, please type 'help <item>'");
             put(TEST, "Write command, like 'test 2+2*2' and press enter for test expression, or 'test' for enter to test mode");
             put(ADD, "Write command, like 'add 2+2*2' and press enter for add to database, or 'add' for enter to add mode");
             put(SHOW, "Example:\n" +
@@ -92,31 +92,29 @@ public class Controller {
         System.out.println("-------------------------------------------------");
     }
 
-    private void addExpression(ExpressionsDAO db, String expression, boolean test) throws SQLException {
+    private Double testExpression(String expression) {
         try {
             double result = Calculator.calculate(expression);
             System.out.println(expression + " = " + Calculator.fmtDouble(result));
-            if (!test) {
-                db.addExpressionAndResult(expression, result);
-                System.out.println("The expression was added to the database successfully.");
-            }
-        } catch (SQLException e) {
-            throw e;
+            return result;
         } catch (Exception e) {
             System.out.println("\tERROR: " + e.getMessage());
+            return null;
         }
     }
 
-    private void editExpression(ExpressionsDAO db, int id, String expression) throws SQLException {
-        try {
-            double result = Calculator.calculate(expression);
-            System.out.println(expression + " = " + Calculator.fmtDouble(result));
-            db.update(id, expression, result);
-            System.out.println("The expression was updated in the database successfully.");
-        } catch (SQLException e) {
-            throw e;
-        } catch (Exception e) {
-            System.out.println("\tERROR: " + e.getMessage());
+    private void addOrEditExpression(ExpressionsDAO db, Integer id, String expression) throws SQLException {
+        Double result = testExpression(expression);
+        if (result != null) {
+            if (id == null) {
+                db.add(expression, result);
+                System.out.println("The expression was added to the database successfully.");
+            } else {
+                db.update(id, expression, result);
+                System.out.println("The expression was updated in the database successfully.");
+            }
+        } else {
+            System.out.println("\tAdditional task - count of numbers in the expression: " + Calculator.calcNumbers(expression));
         }
     }
 
@@ -171,14 +169,14 @@ public class Controller {
                             if (arg == null) {
                                 mMode = ADD_MODE;
                             } else {
-                                addExpression(db, arg, false);
+                                addOrEditExpression(db, null, arg);
                             }
                         } else if (action.startsWith(TEST)) {
                             String arg = parseArgument(action, TEST.length());
                             if (arg == null) {
                                 mMode = TEST_MODE;
                             } else {
-                                addExpression(db, arg, true);
+                                testExpression(arg);
                             }
                         } else if (action.startsWith(SHOW)) {
                             String arg = parseArgument(action, SHOW.length());
@@ -213,7 +211,7 @@ public class Controller {
                                 String[] args = arg.split(" ", 2);
                                 if (args.length != 2) throw new RuntimeException();
                                 int id = Integer.parseInt(args[0]);
-                                editExpression(db, id, args[1]);
+                                addOrEditExpression(db, id, args[1]);
                             }
                         } else if (action.startsWith(DEL)) {
                             String arg = parseArgument(action, DEL.length());
@@ -243,12 +241,14 @@ public class Controller {
                         if (expression.isEmpty()) {
                             mMode = MENU_MODE;
                         } else {
-                            addExpression(db, expression, mMode == TEST_MODE);
+                            if (mMode == TEST_MODE) {
+                                testExpression(expression);
+                            } else {
+                                addOrEditExpression(db, null, expression);
+                            }
                         }
-
                         break;
                 }
-
                 System.out.println();
             } catch (SQLException e) {
                 e.printStackTrace();

@@ -69,7 +69,7 @@ public class ExpressionsDAO {
         return list;
     }
 
-    public void addExpressionAndResult(String expression, double result) throws SQLException {
+    public void add(String expression, double result) throws SQLException {
         PreparedStatement statement = mConnection.prepareStatement("INSERT INTO " + TABLE + " VALUES (NULL, ?, ?)");
         statement.setString(1, expression);
         statement.setDouble(2, result);
